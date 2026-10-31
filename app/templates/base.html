@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" data-bs-theme="{{ current_user.theme if current_user.is_authenticated else 'light' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}{{ app_name }}{% endblock %} · {{ app_name }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/logo.svg') }}" type="image/svg+xml">
+  <link href="{{ url_for('static', filename='vendor/fonts/plus-jakarta-sans.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+  <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<div class="sw-shell" x-data="{ nav: false }">
+  {% include "partials/sidebar.html" %}
+  <div class="sw-backdrop" :class="nav && 'open'" @click="nav = false"></div>
+
+  <div class="sw-main">
+    <header class="sw-topbar">
+      <button class="btn btn-ghost btn-icon d-lg-none" @click="nav = true" aria-label="Open menu"><i class="bi bi-list"></i></button>
+      <form class="sw-search" action="{{ url_for('transactions.index') }}" method="get" role="search">
+        <i class="bi bi-search"></i>
+        <input id="sw-search" class="form-control" name="q" placeholder="Search transactions…" value="{{ request.args.get('q', '') if request.endpoint == 'transactions.index' else '' }}" autocomplete="off">
+        <span class="sw-kbd d-none d-md-inline">Ctrl K</span>
+      </form>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <button class="btn btn-ghost btn-icon" onclick="swToggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+          <i class="bi bi-moon-stars"></i>
+        </button>
+        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#quickAdd">
+          <i class="bi bi-plus-lg"></i><span class="d-none d-sm-inline ms-1">Add</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="sw-content sw-fade">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% include "partials/quick_add.html" %}
+{% else %}
+  {% block auth %}{% endblock %}
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="sw-toasts">
+  {% for category, message in messages %}
+  {% set icon = {'success': 'bi-check-circle-fill text-income', 'danger': 'bi-x-circle-fill text-expense', 'warning': 'bi-exclamation-triangle-fill text-warning'}.get(category, 'bi-info-circle-fill text-primary') %}
+  <div class="sw-toast" role="alert">
+    <i class="bi {{ icon }}"></i>
+    <div class="small fw-medium flex-grow-1">{{ message }}</div>
+    <button type="button" class="btn-close btn-sm" onclick="this.parentElement.remove()" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,24 @@
+<div class="modal fade" id="quickAdd" tabindex="-1" aria-labelledby="quickAddLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" method="post" action="{{ url_for('transactions.create') }}">
+      <div class="modal-header px-4">
+        <div>
+          <h5 class="modal-title fw-bold" id="quickAddLabel">Add transaction</h5>
+          <div class="small text-muted">Tip: press <kbd>N</kbd> anywhere to open this.</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path if request.method == 'GET' else url_for('dashboard.index') }}">
+        {% with form=qa_form, cats=qa_categories, accts=qa_accounts, methods=qa_payment_methods, pfx='qa-' %}
+          {% include "partials/tx_fields.html" %}
+        {% endwith %}
+      </div>
+      <div class="modal-footer px-4">
+        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-gradient px-4"><i class="bi bi-check2 me-1"></i>Save</button>
+      </div>
+    </form>
+  </div>
+</div>

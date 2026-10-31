@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="sw-empty py-5">
+  <div class="sw-empty-icon"><i class="bi bi-compass"></i></div>
+  <div class="display-5 fw-800">{{ code }}</div>
+  <h1 class="h4">{{ title }}</h1>
+  <p class="text-muted">{{ message }}</p>
+  <a class="btn btn-gradient" href="{{ url_for('dashboard.home') }}">Go home</a>
+</div>
+{% endblock %}
+{% block auth %}
+<div class="d-flex align-items-center justify-content-center" style="min-height:100vh">
+  <div class="sw-empty">
+    <div class="sw-empty-icon"><i class="bi bi-compass"></i></div>
+    <div class="display-5 fw-800">{{ code }}</div>
+    <h1 class="h4">{{ title }}</h1>
+    <p class="text-muted">{{ message }}</p>
+    <a class="btn btn-gradient" href="{{ url_for('dashboard.home') }}">Go home</a>
+  </div>
+</div>
+{% endblock %}

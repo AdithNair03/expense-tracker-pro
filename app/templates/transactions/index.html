@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Transactions{% endblock %}
+{% set cur = current_user.currency %}
+{% set base_args = f.active %}
+
+{% macro period_chip(value, label) -%}
+  {% set args = dict(base_args) %}{% set _ = args.pop('date_from', None) %}{% set _ = args.pop('date_to', None) %}
+  {% if value %}{% set _ = args.update({'period': value}) %}{% else %}{% set _ = args.pop('period', None) %}{% endif %}
+  <a class="sw-chip {{ 'active' if f.period == value and not f.date_from and not f.date_to }}" href="{{ url_for('transactions.index', **args) }}">{{ label }}</a>
+{%- endmacro %}
+
+{% block content %}
+<div class="sw-page-head">
+  <div>
+    <h1>Transactions</h1>
+    <p>Every rupee in and out, searchable and filterable.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-ghost" href="{{ url_for('transactions.export_csv', **f.active) }}"><i class="bi bi-download me-1"></i>Export CSV</a>
+    <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#quickAdd"><i class="bi bi-plus-lg me-1"></i>Add transaction</button>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+  {{ period_chip('', 'All time') }}
+  {{ period_chip('this_month', 'This month') }}
+  {{ period_chip('last_month', 'Last month') }}
+  {{ period_chip('this_year', 'This year') }}
+</div>
+
+<!-- Summary for the current filter -->
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="sw-card sw-kpi">
+    <div class="sw-kpi-label"><span class="sw-kpi-icon bg-soft-success"><i class="bi bi-arrow-down-left"></i></span>Income</div>
+    <div class="sw-kpi-value text-income">{{ totals.income|money(cur) }}</div></div></div>
+  <div class="col-md-4"><div class="sw-card sw-kpi">
+    <div class="sw-kpi-label"><span class="sw-kpi-icon bg-soft-danger"><i class="bi bi-arrow-up-right"></i></span>Expenses</div>
+    <div class="sw-kpi-value text-expense">{{ totals.expense|money(cur) }}</div></div></div>
+  <div class="col-md-4"><div class="sw-card sw-kpi">
+    <div class="sw-kpi-label"><span class="sw-kpi-icon bg-soft-primary"><i class="bi bi-calculator"></i></span>Net</div>
+    <div class="sw-kpi-value {{ 'text-expense' if totals.net < 0 else 'text-income' }}">{{ totals.net|money(cur) }}</div></div></div>
+</div>
+
+<!-- Filters -->
+<form method="get" class="sw-card sw-card-body mb-3" x-data="{ more: {{ 'true' if (f.account_id or f.payment_method or f.date_from or f.date_to) else 'false' }} }">
+  {% if f.period %}<input type="hidden" name="period" value="{{ f.period }}">{% endif %}
+  <div class="row g-2 align-items-center">
+    <div class="col-lg-4">
+      <div class="position-relative">
+        <i class="bi bi-search position-absolute text-muted" style="left:.85rem;top:50%;transform:translateY(-50%)"></i>
+        <input class="form-control ps-5" name="q" placeholder="Search description or notes" value="{{ f.q }}">
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <select class="form-select" name="kind">
+        <option value="">All types</option>
+        <option value="expense" {{ 'selected' if f.kind == 'expense' }}>Expenses</option>
+        <option value="income" {{ 'selected' if f.kind == 'income' }}>Income</option>
+      </select>
+    </div>
+    <div class="col-6 col-lg-3">
+      <select class="form-select" name="category_id">
+        <option value="">All categories</option>
+        {% for kind_label, kind in [('Expense', 'expense'), ('Income', 'income')] %}
+        <optgroup label="{{ kind_label }}">
+          {% for c in categories if c.kind == kind %}<option value="{{ c.id }}" {{ 'selected' if f.category_id == c.id|string }}>{{ c.name }}</option>{% endfor %}
+        </optgroup>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-3 d-flex gap-2">
+      <button class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i>Apply</button>
+      <button type="button" class="btn btn-ghost" @click="more = !more" title="More filters"><i class="bi bi-sliders"></i></button>
+      {% if f.active %}<a class="btn btn-ghost" href="{{ url_for('transactions.index') }}" title="Clear filters"><i class="bi bi-x-lg"></i></a>{% endif %}
+    </div>
+  </div>
+  <div class="row g-2 mt-1" x-show="more" x-cloak>
+    <div class="col-6 col-lg-3">
+      <label class="form-label small text-muted mb-1">Account</label>
+      <select class="form-select" name="account_id">
+        <option value="">All accounts</option>
+        {% for a in accounts %}<option value="{{ a.id }}" {{ 'selected' if f.account_id == a.id|string }}>{{ a.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-lg-3">
+      <label class="form-label small text-muted mb-1">Payment method</label>
+      <select class="form-select" name="payment_method">
+        <option value="">All methods</option>
+        {% for m in payment_methods %}<option {{ 'selected' if f.payment_method == m }}>{{ m }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-lg-3">
+      <label class="form-label small text-muted mb-1">From</label>
+      <input class="form-control" type="date" name="date_from" value="{{ f.date_from }}">
+    </div>
+    <div class="col-6 col-lg-3">
+      <label class="form-label small text-muted mb-1">To</label>
+      <input class="form-control" type="date" name="date_to" value="{{ f.date_to }}">
+    </div>
+  </div>
+</form>
+
+<!-- List -->
+<div class="sw-card overflow-hidden">
+  <div class="d-flex justify-content-between align-items-center px-4 py-3">
+    <span class="fw-semibold">{{ pagination.total }} transaction{{ 's' if pagination.total != 1 }}</span>
+    {% if pagination.pages > 1 %}<span class="small text-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>{% endif %}
+  </div>
+  {% if pagination.items %}
+    {% for t in pagination.items %}
+      {% if loop.changed(t.date) %}
+      <div class="sw-tx-group"><span>{{ t.date.strftime('%A, %d %B %Y') }}</span></div>
+      {% endif %}
+      <div class="sw-tx-row">
+        <span class="sw-bubble" style="--c: {{ t.category.color }}"><i class="bi {{ t.category.icon }}"></i></span>
+        <div class="min-w-0">
+          <div class="sw-list-title text-truncate">{{ t.description or t.category.name }}</div>
+          <div class="sw-list-sub text-truncate">{{ t.category.name }} · {{ t.account.name }}{% if t.notes %} · <i class="bi bi-sticky"></i>{% endif %}</div>
+        </div>
+        <span class="sw-pill sw-hide-sm">{{ t.payment_method }}</span>
+        <span class="sw-amount {{ 'text-income' if t.kind == 'income' else 'text-expense' }}">{{ '+' if t.kind == 'income' else '−' }}{{ t.amount|money(cur) }}</span>
+        <div class="sw-tx-actions dropdown">
+          <button class="btn btn-sm btn-ghost btn-icon" data-bs-toggle="dropdown" aria-label="Actions"><i class="bi bi-three-dots"></i></button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ url_for('transactions.edit', tx_id=t.id, next=request.full_path) }}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+            <li>
+              <form method="post" action="{{ url_for('transactions.delete', tx_id=t.id) }}" onsubmit="return confirm('Delete this transaction?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Delete</button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+    {% endfor %}
+
+    {% if pagination.pages > 1 %}
+    <nav class="px-4 py-3 border-top"><ul class="pagination pagination-sm mb-0 justify-content-center">
+      {% if pagination.has_prev %}<li class="page-item"><a class="page-link" href="{{ url_for('transactions.index', page=pagination.prev_num, **f.active) }}">&laquo;</a></li>{% endif %}
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}<li class="page-item {{ 'active' if p == pagination.page }}"><a class="page-link" href="{{ url_for('transactions.index', page=p, **f.active) }}">{{ p }}</a></li>
+        {% else %}<li class="page-item disabled"><span class="page-link">&hellip;</span></li>{% endif %}
+      {% endfor %}
+      {% if pagination.has_next %}<li class="page-item"><a class="page-link" href="{{ url_for('transactions.index', page=pagination.next_num, **f.active) }}">&raquo;</a></li>{% endif %}
+    </ul></nav>
+    {% endif %}
+  {% else %}
+    <div class="sw-empty">
+      <div class="sw-empty-icon"><i class="bi bi-search"></i></div>
+      <h3 class="h6">{{ 'No matches' if f.active else 'No transactions yet' }}</h3>
+      <p class="text-muted small">{{ 'Try widening your filters.' if f.active else 'Add your first transaction to get started.' }}</p>
+      {% if f.active %}<a class="btn btn-soft" href="{{ url_for('transactions.index') }}">Clear filters</a>
+      {% else %}<button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#quickAdd">Add transaction</button>{% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

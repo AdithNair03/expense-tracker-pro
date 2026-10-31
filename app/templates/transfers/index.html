@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Transfers{% endblock %}
+{% set cur = current_user.currency %}
+{% block content %}
+<div class="sw-page-head">
+  <div><h1>Transfers</h1><p>Move money between your own accounts. Doesn't count as income or spending.</p></div>
+  <a class="btn btn-gradient" href="{{ url_for('transfers.create') }}"><i class="bi bi-arrow-left-right me-1"></i>New transfer</a>
+</div>
+
+<div class="sw-card">
+  <ul class="sw-list">
+    {% for t in transfers %}
+    <li class="sw-list-item">
+      <span class="sw-bubble" style="--c: #94a3b8"><i class="bi bi-arrow-left-right"></i></span>
+      <div class="flex-grow-1 min-w-0">
+        <div class="sw-list-title">{{ t.out.account.name }} <i class="bi bi-arrow-right mx-1 text-muted"></i> {{ t.in.account.name if t.in else '—' }}</div>
+        <div class="sw-list-sub">{{ t.out.date.strftime('%d %b %Y') }}{% if t.out.notes %} · {{ t.out.notes }}{% endif %}</div>
+      </div>
+      <div class="fw-700 tabular">{{ t.out.amount|money(cur) }}</div>
+      <form method="post" action="{{ url_for('transfers.delete', transfer_id=t.out.transfer_id) }}" onsubmit="return confirm('Delete this transfer?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-ghost btn-icon text-danger" aria-label="Delete"><i class="bi bi-trash"></i></button>
+      </form>
+    </li>
+    {% else %}
+    <li class="sw-empty">
+      <div class="sw-empty-icon"><i class="bi bi-arrow-left-right"></i></div>
+      <h3 class="h6">No transfers yet</h3>
+      <p class="text-muted small">Moving cash into your bank, or paying off a credit card from savings? Log it as a transfer.</p>
+      <a class="btn btn-gradient" href="{{ url_for('transfers.create') }}">Make your first transfer</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Recurring transactions{% endblock %}
+{% set cur = current_user.currency %}
+{% block content %}
+<div class="sw-page-head">
+  <div><h1>Recurring transactions</h1><p>Rent, salary, subscriptions — set them up once and Spendwise adds them for you on schedule.</p></div>
+  <a class="btn btn-gradient" href="{{ url_for('recurring.create') }}"><i class="bi bi-plus-lg me-1"></i>New recurring</a>
+</div>
+
+<div class="sw-card">
+  <ul class="sw-list">
+    {% for r in items %}
+    <li class="sw-list-item {{ 'opacity-50' if not r.active }}">
+      <span class="sw-bubble" style="--c: {{ r.category.color }}"><i class="bi {{ r.category.icon }}"></i></span>
+      <div class="flex-grow-1 min-w-0">
+        <div class="sw-list-title">{{ r.name }}
+          {% if r.active and r.next_due_date <= today %}<span class="badge text-bg-warning ms-1">Due</span>{% endif %}
+          {% if not r.active %}<span class="badge text-bg-secondary ms-1">Paused</span>{% endif %}
+        </div>
+        <div class="sw-list-sub">{{ r.frequency_label }} · next {{ r.next_due_date.strftime('%d %b %Y') }} · {{ r.account.name }}</div>
+      </div>
+      <div class="fw-700 tabular {{ 'text-income' if r.kind == 'income' else 'text-expense' }}">
+        {{ '+' if r.kind == 'income' else '-' }}{{ r.amount|money(cur) }}
+      </div>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-ghost btn-icon" data-bs-toggle="dropdown" aria-label="Actions"><i class="bi bi-three-dots"></i></button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="{{ url_for('recurring.edit', rec_id=r.id) }}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+          <li><form method="post" action="{{ url_for('recurring.toggle_active', rec_id=r.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="dropdown-item"><i class="bi bi-{{ 'pause' if r.active else 'play' }} me-2"></i>{{ 'Pause' if r.active else 'Resume' }}</button></form></li>
+          <li><form method="post" action="{{ url_for('recurring.delete', rec_id=r.id) }}" onsubmit="return confirm('Delete this recurring transaction?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Delete</button></form></li>
+        </ul>
+      </div>
+    </li>
+    {% else %}
+    <li class="sw-empty">
+      <div class="sw-empty-icon"><i class="bi bi-arrow-repeat"></i></div>
+      <h3 class="h6">Nothing set up yet</h3>
+      <p class="text-muted small">Add rent, a subscription or your salary and it'll appear in your transactions automatically when it's due.</p>
+      <a class="btn btn-gradient" href="{{ url_for('recurring.create') }}">Add your first one</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{# Needs: field (a WTForms StringField holding a hex colour) #}
+{% set palette = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#64748b'] %}
+<div x-data="{ color: '{{ field.data or '#6366f1' }}' }">
+  <label class="form-label">{{ field.label.text }}</label>
+  <div class="sw-swatches mb-2">
+    {% for c in palette %}
+    <button type="button" class="sw-swatch" style="--c: {{ c }}" :class="color === '{{ c }}' && 'selected'" @click="color = '{{ c }}'" aria-label="{{ c }}"></button>
+    {% endfor %}
+    <input type="color" class="form-control form-control-color" x-model="color" title="Custom colour" style="width:44px;height:30px;padding:2px">
+  </div>
+  <input type="hidden" name="{{ field.name }}" :value="color">
+  {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+</div>

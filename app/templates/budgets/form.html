@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <a class="small text-muted text-decoration-none" href="{{ url_for('budgets.index') }}"><i class="bi bi-arrow-left me-1"></i>Budgets</a>
+    <div class="sw-card mt-2">
+      <div class="sw-card-head"><h1 class="h4 mb-0">{{ title }}</h1></div>
+      <form method="post" class="sw-card-body" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">{{ form.category_id.label(class="form-label") }}
+          {{ form.category_id(class="form-select") }}
+          {% if budget %}<div class="form-text">Category can't be changed — delete and recreate to switch.</div>{% endif %}</div>
+        <div class="mb-4">{{ form.monthly_limit.label(class="form-label") }}
+          <div class="input-group"><span class="input-group-text">{{ currency_symbol }}</span>
+            {{ form.monthly_limit(class="form-control" + (" is-invalid" if form.monthly_limit.errors else ""), step="0.01") }}</div>
+          {% for e in form.monthly_limit.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <div class="d-flex justify-content-end gap-2">
+          <a class="btn btn-ghost" href="{{ url_for('budgets.index') }}">Cancel</a>
+          <button class="btn btn-gradient px-4">Save budget</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

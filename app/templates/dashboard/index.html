@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% set cur = current_user.currency %}
+
+{% macro delta(value, good_when_up=True, suffix='%') -%}
+  {% if value is none %}
+    <span class="sw-delta neutral">new</span>
+  {% else %}
+    {% set up = value >= 0 %}
+    <span class="sw-delta {{ 'good' if up == good_when_up else 'bad' }}">
+      <i class="bi {{ 'bi-arrow-up-right' if up else 'bi-arrow-down-right' }}"></i>{{ '%.1f'|format(value|abs) }}{{ suffix }}
+    </span>
+  {% endif %}
+{%- endmacro %}
+
+{% block content %}
+<div class="sw-page-head">
+  <div>
+    <h1>{{ greeting }}, {{ current_user.first_name }} 👋</h1>
+    <p>Here's your money at a glance for {{ today.strftime('%B %Y') }}.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-soft" href="{{ url_for('transactions.create', kind='income') }}"><i class="bi bi-arrow-down-left me-1"></i>Add income</a>
+    <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#quickAdd"><i class="bi bi-plus-lg me-1"></i>Add expense</button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row g-3 mb-3">
+  <div class="col-sm-6 col-xl-3">
+    <div class="sw-card sw-kpi hero">
+      <div class="sw-kpi-label"><i class="bi bi-safe2"></i>Total balance</div>
+      <div class="sw-kpi-value">{{ s.balance|money(cur, 0) }}</div>
+      <div class="sw-kpi-foot">Across {{ balances|length }} account{{ 's' if balances|length != 1 }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="sw-card sw-kpi">
+      <div class="sw-kpi-label"><span class="sw-kpi-icon bg-soft-success"><i class="bi bi-arrow-down-left"></i></span>Income this month</div>
+      <div class="sw-kpi-value text-income">{{ s.income|money(cur, 0) }}</div>
+      <div class="sw-kpi-foot">{{ delta(s.income_change, True) }} vs last month</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="sw-card sw-kpi">
+      <div class="sw-kpi-label"><span class="sw-kpi-icon bg-soft-danger"><i class="bi bi-arrow-up-right"></i></span>Spent this month</div>
+      <div class="sw-kpi-value text-expense">{{ s.expense|money(cur, 0) }}</div>
+      <div class="sw-kpi-foot">{{ delta(s.expense_change, False) }} vs last month</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="sw-card sw-kpi">
+      <div class="sw-kpi-label"><span class="sw-kpi-icon bg-soft-primary"><i class="bi bi-piggy-bank"></i></span>Savings rate</div>
+      <div class="sw-kpi-value">{{ ('%.1f'|format(s.savings_rate)) ~ '%' if s.savings_rate is not none else '—' }}</div>
+      <div class="sw-kpi-foot">
+        {% if s.savings_rate_change is not none %}{{ delta(s.savings_rate_change, True, ' pts') }} vs last month
+        {% else %}Net {{ s.net|money(cur, 0) }} this month{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if budget_alerts or goals %}
+<!-- Budgets + goals row -->
+<div class="row g-3 mb-3">
+  {% if budget_alerts %}
+  <div class="col-xl-{{ 7 if goals else 12 }}">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Budgets</h2><div class="sw-card-sub">This month's spending vs your limits</div></div>
+        <a class="btn btn-sm btn-soft" href="{{ url_for('budgets.index') }}">Manage</a>
+      </div>
+      <div class="sw-card-body">
+        <div class="row g-3">
+          {% for r in budget_alerts %}
+          <div class="col-sm-6">
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="fw-medium"><i class="bi {{ r.budget.category.icon }} me-1"></i>{{ r.budget.category.name }}</span>
+              <span class="text-muted">{{ r.spent|money(cur, 0) }} / {{ r.limit|money(cur, 0) }}</span>
+            </div>
+            <div class="progress" style="height:6px"><div class="progress-bar bg-{{ r.tone }}" style="width: {{ r.pct }}%"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if goals %}
+  <div class="col-xl-{{ 5 if budget_alerts else 12 }}">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Savings goals</h2><div class="sw-card-sub">Progress toward what you're saving for</div></div>
+        <a class="btn btn-sm btn-soft" href="{{ url_for('goals.index') }}">Manage</a>
+      </div>
+      <div class="sw-card-body">
+        <div class="d-grid gap-3">
+          {% for g in goals %}
+          <div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="fw-medium"><i class="bi {{ g.icon }} me-1"></i>{{ g.name }}</span>
+              <span class="text-muted">{{ g.progress_pct }}%</span>
+            </div>
+            <div class="progress" style="height:6px"><div class="progress-bar" style="width: {{ g.progress_pct }}%; background: {{ g.color }}"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Charts row -->
+<div class="row g-3 mb-3">
+  <div class="col-xl-8">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Cash flow</h2><div class="sw-card-sub">Income vs expenses, last 6 months</div></div>
+        <div class="d-flex gap-3 small">
+          <span class="d-flex align-items-center gap-1"><span class="sw-dot" style="--c:#10b981"></span>Income</span>
+          <span class="d-flex align-items-center gap-1"><span class="sw-dot" style="--c:#6366f1"></span>Expenses</span>
+        </div>
+      </div>
+      <div class="px-2 pb-2"><div id="cashflowChart" style="min-height:400px"></div></div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Where it went</h2><div class="sw-card-sub">Spending by category this month</div></div>
+      </div>
+      {% if categories %}
+      <div id="categoryChart" class="mt-2"></div>
+      <ul class="sw-list pb-2">
+        {% for c in categories[:4] %}
+        <li class="sw-list-item py-2">
+          <span class="sw-bubble sm" style="--c: {{ c.color }}"><i class="bi {{ c.icon }}"></i></span>
+          <div class="flex-grow-1 min-w-0">
+            <div class="d-flex justify-content-between"><span class="sw-list-title">{{ c.name }}</span><span class="sw-amount small">{{ c.amount|money(cur, 0) }}</span></div>
+            <div class="sw-progress mt-1"><span style="width: {{ c.share }}%; --c: {{ c.color }}"></span></div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="sw-empty"><div class="sw-empty-icon"><i class="bi bi-pie-chart"></i></div><p class="text-muted mb-0">No spending recorded this month yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Insights + daily spend -->
+<div class="row g-3 mb-3">
+  <div class="col-xl-5">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Smart insights</h2><div class="sw-card-sub">Generated from your own data</div></div>
+        <span class="sw-ai-badge"><i class="bi bi-stars me-1"></i>AUTO</span>
+      </div>
+      <div class="sw-card-body">
+        <div class="d-grid gap-2">
+          {% for i in insights %}
+          <div class="sw-insight">
+            <span class="sw-kpi-icon bg-soft-{{ i.tone }} flex-shrink-0"><i class="bi {{ i.icon }}"></i></span>
+            <div><div class="sw-insight-title">{{ i.title }}</div><p class="sw-insight-text">{{ i.text }}</p></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-7">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Daily spending</h2><div class="sw-card-sub">{{ today.strftime('%B') }} so far</div></div>
+      </div>
+      <div class="px-2 pb-2"><div id="dailyChart" style="min-height:280px"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent + accounts -->
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Recent transactions</h2><div class="sw-card-sub">Your latest activity</div></div>
+        <a class="btn btn-sm btn-soft" href="{{ url_for('transactions.index') }}">View all</a>
+      </div>
+      {% if recent %}
+      <ul class="sw-list mt-2">
+        {% for t in recent %}
+        <li><a class="sw-list-item" href="{{ url_for('transactions.edit', tx_id=t.id) }}">
+          <span class="sw-bubble" style="--c: {{ t.category.color }}"><i class="bi {{ t.category.icon }}"></i></span>
+          <div class="flex-grow-1 min-w-0">
+            <div class="sw-list-title text-truncate">{{ t.description or t.category.name }}</div>
+            <div class="sw-list-sub">{{ t.category.name }} · {{ t.date.strftime('%d %b') }} · {{ t.account.name }}</div>
+          </div>
+          <span class="sw-amount {{ 'text-income' if t.kind == 'income' else 'text-expense' }}">{{ '+' if t.kind == 'income' else '−' }}{{ t.amount|money(cur) }}</span>
+        </a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="sw-empty">
+        <div class="sw-empty-icon"><i class="bi bi-receipt"></i></div>
+        <h3 class="h6">No transactions yet</h3>
+        <p class="text-muted small">Add your first one and the dashboard comes alive.</p>
+        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#quickAdd"><i class="bi bi-plus-lg me-1"></i>Add transaction</button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <div class="sw-card h-100">
+      <div class="sw-card-head">
+        <div><h2 class="sw-card-title">Accounts</h2><div class="sw-card-sub">Live balances</div></div>
+        <a class="btn btn-sm btn-soft" href="{{ url_for('accounts.index') }}">Manage</a>
+      </div>
+      <ul class="sw-list mt-2">
+        {% for a, bal in balances %}
+        <li class="sw-list-item">
+          <span class="sw-bubble" style="--c: {{ a.color }}"><i class="bi {{ a.icon }}"></i></span>
+          <div class="flex-grow-1"><div class="sw-list-title">{{ a.name }}</div><div class="sw-list-sub">{{ a.type_label }}</div></div>
+          <span class="sw-amount {{ 'text-expense' if bal < 0 }}">{{ bal|money(cur) }}</span>
+        </li>
+        {% else %}
+        <li class="sw-list-item text-muted small">No accounts yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/apexcharts.min.js') }}"></script>
+<script>
+  const D = {{ charts|tojson }};
+  const SYM = {{ currency_symbol|tojson }};
+  const fmt = (v) => swMoney(v, SYM);
+  const base = (t) => ({ background: "transparent", foreColor: t.text, fontFamily: "inherit", toolbar: { show: false }, zoom: { enabled: false } });
+
+  swRegisterChart((t) => new ApexCharts(document.querySelector("#cashflowChart"), {
+    chart: { ...base(t), type: "area", height: 400 },
+    theme: { mode: t.mode },
+    series: [{ name: "Income", data: D.cashflow.income }, { name: "Expenses", data: D.cashflow.expense }],
+    colors: ["#10b981", "#6366f1"],
+    stroke: { curve: "smooth", width: 3 },
+    fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: .35, opacityTo: .02, stops: [0, 95] } },
+    dataLabels: { enabled: false }, legend: { show: false },
+    xaxis: { categories: D.cashflow.labels, axisBorder: { show: false }, axisTicks: { show: false } },
+    yaxis: { min: 0, forceNiceScale: true, labels: { formatter: (v) => fmt(v) } },
+    grid: { borderColor: t.grid, strokeDashArray: 4 },
+    tooltip: { y: { formatter: (v) => fmt(v) } },
+  }));
+
+  if (document.querySelector("#categoryChart")) swRegisterChart((t) => new ApexCharts(document.querySelector("#categoryChart"), {
+    chart: { ...base(t), type: "donut", height: 230 },
+    theme: { mode: t.mode },
+    series: D.categories.values, labels: D.categories.labels, colors: D.categories.colors,
+    legend: { show: false }, dataLabels: { enabled: false }, stroke: { width: 0 },
+    plotOptions: { pie: { donut: { size: "74%", labels: { show: true,
+      value: { formatter: (v) => fmt(v), fontWeight: 800, fontSize: "20px" },
+      total: { show: true, label: "Spent", formatter: (w) => fmt(w.globals.seriesTotals.reduce((a, b) => a + b, 0)) } } } } },
+    tooltip: { y: { formatter: (v) => fmt(v) } },
+  }));
+
+  swRegisterChart((t) => new ApexCharts(document.querySelector("#dailyChart"), {
+    chart: { ...base(t), type: "bar", height: 280 },
+    theme: { mode: t.mode },
+    series: [{ name: "Spent", data: D.daily }],
+    colors: ["#8b5cf6"],
+    plotOptions: { bar: { borderRadius: 5, columnWidth: "60%" } },
+    dataLabels: { enabled: false },
+    xaxis: { type: "datetime", labels: { format: "dd MMM" }, axisBorder: { show: false }, axisTicks: { show: false } },
+    yaxis: { labels: { formatter: (v) => fmt(v) } },
+    grid: { borderColor: t.grid, strokeDashArray: 4 },
+    tooltip: { x: { format: "ddd, dd MMM" }, y: { formatter: (v) => fmt(v) } },
+  }));
+</script>
+{% endblock %}

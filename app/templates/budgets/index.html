@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Budgets{% endblock %}
+{% set cur = current_user.currency %}
+{% block content %}
+<div class="sw-page-head">
+  <div><h1>Budgets</h1><p>Monthly spending limits per category, tracked against what you've actually spent.</p></div>
+  {% if available %}
+  <a class="btn btn-gradient" href="{{ url_for('budgets.create') }}"><i class="bi bi-plus-lg me-1"></i>New budget</a>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  {% for r in rows %}
+  <div class="col-sm-6 col-xl-4">
+    <div class="sw-card hover-lift h-100">
+      <div class="sw-card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <span class="sw-bubble" style="--c: {{ r.budget.category.color }}"><i class="bi {{ r.budget.category.icon }}"></i></span>
+            <div class="fw-bold">{{ r.budget.category.name }}</div>
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-ghost btn-icon" data-bs-toggle="dropdown" aria-label="Actions"><i class="bi bi-three-dots"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{{ url_for('budgets.edit', budget_id=r.budget.id) }}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+              <li><form method="post" action="{{ url_for('budgets.delete', budget_id=r.budget.id) }}" onsubmit="return confirm('Delete this budget?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Delete</button></form></li>
+            </ul>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-baseline mt-3 mb-1">
+          <span class="fs-5 fw-800 tabular">{{ r.spent|money(cur) }}</span>
+          <span class="small text-muted">of {{ r.limit|money(cur) }}</span>
+        </div>
+        <div class="progress" style="height:8px">
+          <div class="progress-bar bg-{{ r.tone }}" style="width: {{ r.pct }}%"></div>
+        </div>
+        <div class="small text-muted mt-2">
+          {% if r.tone == 'danger' %}<i class="bi bi-exclamation-triangle-fill text-danger"></i> Over budget this month
+          {% elif r.tone == 'warning' %}<i class="bi bi-exclamation-circle text-warning"></i> {{ r.remaining|money(cur) }} left, getting close
+          {% else %}{{ r.remaining|money(cur) }} left this month{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12"><div class="sw-card sw-empty">
+    <div class="sw-empty-icon"><i class="bi bi-bullseye"></i></div>
+    <h3 class="h6">No budgets yet</h3>
+    <p class="text-muted small">Set a monthly limit for a category and Spendwise will track it for you.</p>
+    <a class="btn btn-gradient" href="{{ url_for('budgets.create') }}">Create your first budget</a>
+  </div></div>
+  {% endfor %}
+</div>
+{% endblock %}

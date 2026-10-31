@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <a class="small text-muted text-decoration-none" href="{{ url_for('goals.index') }}"><i class="bi bi-arrow-left me-1"></i>Savings goals</a>
+    <div class="sw-card mt-2">
+      <div class="sw-card-head"><h1 class="h4 mb-0">{{ title }}</h1></div>
+      <form method="post" class="sw-card-body" novalidate x-data="{ icon: '{{ form.icon.data or 'bi-trophy' }}' }">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">{{ form.name.label(class="form-label") }}
+          {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g. New laptop, Trip to Goa") }}
+          {% for e in form.name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}</div>
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">{{ form.target_amount.label(class="form-label") }}
+            <div class="input-group"><span class="input-group-text">{{ currency_symbol }}</span>
+              {{ form.target_amount(class="form-control" + (" is-invalid" if form.target_amount.errors else ""), step="0.01") }}</div>
+            {% for e in form.target_amount.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-sm-6">{{ form.target_date.label(class="form-label") }}
+            {{ form.target_date(class="form-control", type="date") }}
+            <div class="form-text">Optional</div></div>
+        </div>
+        <div class="mb-3">{% with field=form.color %}{% include "partials/color_picker.html" %}{% endwith %}</div>
+        <div class="mb-4">
+          <label class="form-label">Icon</label>
+          <div class="sw-icon-grid">
+            {% for i in ["bi-trophy", "bi-piggy-bank", "bi-laptop", "bi-airplane", "bi-house-door", "bi-car-front", "bi-mortarboard", "bi-gift", "bi-heart", "bi-camera"] %}
+            <button type="button" class="sw-icon-pick" :class="icon === '{{ i }}' && 'selected'" @click="icon = '{{ i }}'" aria-label="{{ i }}"><i class="bi {{ i }}"></i></button>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="icon" :value="icon">
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <a class="btn btn-ghost" href="{{ url_for('goals.index') }}">Cancel</a>
+          <button class="btn btn-gradient px-4">Save goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

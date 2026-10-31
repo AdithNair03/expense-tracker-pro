@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block auth %}
+<div class="sw-auth">
+  <section class="sw-auth-art">
+    <div class="d-flex align-items-center gap-2">
+      <span class="sw-logo"><i class="bi bi-lightning-charge-fill"></i></span>
+      <span class="fw-bold fs-5">{{ app_name }}</span>
+    </div>
+    <div>
+      <h2 class="mb-3">Know where every<br>rupee goes.</h2>
+      <p class="text-white-50 mb-4" style="max-width:430px">Track spending across bank, cash, cards and UPI. Get smart insights, forecasts and beautiful reports, deployed on a cloud-native DevOps pipeline.</p>
+      <div class="sw-auth-feature"><i class="bi bi-graph-up-arrow"></i><div><strong>Live dashboards</strong><span>Cash flow, categories and daily trends</span></div></div>
+      <div class="sw-auth-feature"><i class="bi bi-stars"></i><div><strong>Smart insights</strong><span>Month-end forecasts and spending alerts</span></div></div>
+      <div class="sw-auth-feature"><i class="bi bi-shield-lock"></i><div><strong>Private by design</strong><span>Hashed passwords, CSRF and rate limiting</span></div></div>
+    </div>
+    <div class="sw-glass d-flex align-items-center gap-3" style="max-width:360px">
+      <span class="sw-kpi-icon" style="background:rgba(16,185,129,.2);color:#34d399"><i class="bi bi-piggy-bank"></i></span>
+      <div><div class="small text-white-50">Savings rate this month</div><div class="fw-bold fs-5">32.4% <span class="small" style="color:#34d399">▲ 6.1 pts</span></div></div>
+    </div>
+  </section>
+  <section class="sw-auth-form">
+    <div class="sw-auth-card sw-fade">{% block form %}{% endblock %}</div>
+  </section>
+</div>
+{% endblock %}

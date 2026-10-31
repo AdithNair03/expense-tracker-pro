@@ -1,0 +1,27 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Sign in{% endblock %}
+{% block form %}
+<h1 class="h3 mb-1">Welcome back</h1>
+<p class="text-muted mb-4">Sign in to continue to your dashboard.</p>
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <div class="mb-3">{{ form.email.label(class="form-label") }}
+    {{ form.email(class="form-control form-control-lg" + (" is-invalid" if form.email.errors else ""), placeholder="you@example.com", autofocus=true) }}
+    {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}</div>
+  <div class="mb-3" x-data="{ show: false }">{{ form.password.label(class="form-label") }}
+    <div class="position-relative">
+      <input class="form-control form-control-lg {{ 'is-invalid' if form.password.errors }}" :type="show ? 'text' : 'password'" name="password" id="password" placeholder="••••••••" required>
+      <button type="button" class="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-1 text-muted" @click="show = !show" aria-label="Show password"><i class="bi" :class="show ? 'bi-eye-slash' : 'bi-eye'"></i></button>
+    </div>
+    {% for e in form.password.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}</div>
+  <div class="form-check mb-4">{{ form.remember(class="form-check-input") }}{{ form.remember.label(class="form-check-label small") }}</div>
+  <button class="btn btn-gradient btn-lg w-100">Sign in</button>
+</form>
+{% if config.get('SHOW_DEMO_LOGIN') %}
+<div class="sw-insight mt-4 small">
+  <i class="bi bi-info-circle text-primary"></i>
+  <div>Demo account: <code>demo@spendwise.app</code> / <code>Demo@1234</code><br><span class="text-muted">Created by <code>flask seed-demo</code></span></div>
+</div>
+{% endif %}
+<p class="mt-4 text-center text-muted small">New here? <a href="{{ url_for('auth.register') }}" class="fw-semibold">Create an account</a></p>
+{% endblock %}

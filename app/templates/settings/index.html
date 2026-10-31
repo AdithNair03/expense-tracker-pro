@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% macro field(f, type='text') -%}
+<div class="mb-3">{{ f.label(class="form-label") }}
+  {% if f.type == 'SelectField' %}{{ f(class="form-select") }}
+  {% else %}{{ f(class="form-control" + (" is-invalid" if f.errors else "")) }}{% endif %}
+  {% for e in f.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+{%- endmacro %}
+{% block content %}
+<div class="sw-page-head"><div><h1>Settings</h1><p>Your profile, preferences and security.</p></div></div>
+<div class="row g-3">
+  <div class="col-xl-4">
+    <div class="sw-card sw-card-body text-center h-100">
+      <span class="sw-avatar mx-auto mb-3" style="width:84px;height:84px;font-size:1.8rem">{{ current_user.initials }}</span>
+      <h2 class="h5 mb-0">{{ current_user.name }}</h2>
+      <div class="text-muted small">{{ current_user.email }}</div>
+      <div class="d-flex justify-content-center gap-2 mt-3">
+        <span class="sw-pill"><i class="bi bi-person-badge"></i>{{ current_user.role|capitalize }}</span>
+        <span class="sw-pill"><i class="bi bi-calendar3"></i>Joined {{ current_user.created_at.strftime('%b %Y') }}</span>
+      </div>
+      <hr>
+      <h3 class="h6 text-start mb-2">Recent activity</h3>
+      <ul class="list-unstyled text-start small mb-0">
+        {% for a in activity %}
+        <li class="d-flex justify-content-between py-1 border-bottom"><span>{{ a.action.replace('_', ' ')|capitalize }}</span><span class="text-muted">{{ a.created_at.strftime('%d %b, %H:%M') }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <form method="post" class="sw-card sw-card-body h-100" novalidate>
+      {{ profile.hidden_tag() }}
+      <h2 class="sw-card-title mb-3">Profile & preferences</h2>
+      {{ field(profile.name) }}{{ field(profile.currency) }}{{ field(profile.theme) }}
+      {{ profile.submit(class="btn btn-gradient w-100") }}
+    </form>
+  </div>
+  <div class="col-xl-4">
+    <form method="post" class="sw-card sw-card-body h-100" novalidate>
+      {{ password.hidden_tag() }}
+      <h2 class="sw-card-title mb-3">Change password</h2>
+      {{ field(password.current) }}{{ field(password.new) }}{{ field(password.confirm) }}
+      {{ password.submit(class="btn btn-primary w-100") }}
+    </form>
+  </div>
+</div>
+{% endblock %}

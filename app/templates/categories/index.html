@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% macro cat_column(title, kind, items) -%}
+<div class="col-lg-6">
+  <div class="sw-card h-100">
+    <div class="sw-card-head">
+      <div><h2 class="sw-card-title">{{ title }}</h2><div class="sw-card-sub">{{ items|length }} categories</div></div>
+      <a class="btn btn-sm btn-soft" href="{{ url_for('categories.create', kind=kind) }}"><i class="bi bi-plus-lg"></i> Add</a>
+    </div>
+    <ul class="sw-list mt-2">
+      {% for c in items %}
+      <li class="sw-list-item">
+        <span class="sw-bubble" style="--c: {{ c.color }}"><i class="bi {{ c.icon }}"></i></span>
+        <div class="flex-grow-1">
+          <div class="sw-list-title">{{ c.name }}</div>
+          <div class="sw-list-sub">{{ usage.get(c.id, 0) }} transaction{{ 's' if usage.get(c.id, 0) != 1 }}</div>
+        </div>
+        <a class="btn btn-sm btn-ghost btn-icon" href="{{ url_for('categories.edit', cat_id=c.id) }}" aria-label="Edit"><i class="bi bi-pencil"></i></a>
+        <form method="post" action="{{ url_for('categories.delete', cat_id=c.id) }}" onsubmit="return confirm('Delete {{ c.name }}?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-ghost btn-icon text-danger" aria-label="Delete" {{ 'disabled' if usage.get(c.id) }}><i class="bi bi-trash"></i></button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{%- endmacro %}
+{% block content %}
+<div class="sw-page-head">
+  <div><h1>Categories</h1><p>Organise spending and income your way, with your own colours and icons.</p></div>
+  <a class="btn btn-gradient" href="{{ url_for('categories.create') }}"><i class="bi bi-plus-lg me-1"></i>New category</a>
+</div>
+<div class="row g-3">
+  {{ cat_column('Expense categories', 'expense', expense) }}
+  {{ cat_column('Income categories', 'income', income) }}
+</div>
+{% endblock %}

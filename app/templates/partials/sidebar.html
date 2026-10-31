@@ -1,0 +1,41 @@
+{% set ep = request.endpoint or '' %}
+{% macro nav_link(endpoint, icon, label, prefix) -%}
+<a href="{{ url_for(endpoint) }}" class="{{ 'active' if ep.startswith(prefix) }}"><i class="bi {{ icon }}"></i>{{ label }}</a>
+{%- endmacro %}
+<aside class="sw-sidebar" :class="nav && 'open'">
+  <a class="sw-brand" href="{{ url_for('dashboard.index') }}">
+    <span class="sw-logo"><i class="bi bi-lightning-charge-fill"></i></span>
+    <span><span class="sw-brand-name d-block">{{ app_name }}</span><span class="sw-brand-sub">Expense Tracker Pro</span></span>
+  </a>
+  <nav class="sw-nav">
+    <div class="sw-nav-label">Overview</div>
+    {{ nav_link('dashboard.index', 'bi-grid-1x2', 'Dashboard', 'dashboard.') }}
+    {{ nav_link('transactions.index', 'bi-arrow-left-right', 'Transactions', 'transactions.') }}
+    <div class="sw-nav-label">Money</div>
+    {{ nav_link('accounts.index', 'bi-wallet2', 'Accounts', 'accounts.') }}
+    {{ nav_link('categories.index', 'bi-tags', 'Categories', 'categories.') }}
+    {{ nav_link('transfers.index', 'bi-arrow-left-right', 'Transfers', 'transfers.') }}
+    {{ nav_link('budgets.index', 'bi-bullseye', 'Budgets', 'budgets.') }}
+    {{ nav_link('goals.index', 'bi-trophy', 'Savings goals', 'goals.') }}
+    {{ nav_link('recurring.index', 'bi-arrow-repeat', 'Recurring', 'recurring.') }}
+    <div class="sw-nav-label">Intelligence</div>
+    <a class="disabled"><i class="bi bi-stars"></i>AI insights<span class="sw-soon">SOON</span></a>
+    <a class="disabled"><i class="bi bi-people"></i>Split bills<span class="sw-soon">SOON</span></a>
+    <a class="disabled"><i class="bi bi-bar-chart-line"></i>Reports<span class="sw-soon">SOON</span></a>
+    <div class="sw-nav-label">Account</div>
+    {{ nav_link('settings.index', 'bi-gear', 'Settings', 'settings.') }}
+  </nav>
+  <div class="sw-sidebar-foot">
+    <div class="sw-user">
+      <span class="sw-avatar">{{ current_user.initials }}</span>
+      <div class="flex-grow-1 min-w-0">
+        <div class="sw-user-name">{{ current_user.name }}</div>
+        <div class="sw-user-mail">{{ current_user.email }}</div>
+      </div>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="sw-icon-btn" title="Sign out" aria-label="Sign out"><i class="bi bi-box-arrow-right"></i></button>
+      </form>
+    </div>
+  </div>
+</aside>

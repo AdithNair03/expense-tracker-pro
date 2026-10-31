@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7 col-xl-6">
+    <a class="small text-muted text-decoration-none" href="{{ request.args.get('next') or url_for('transactions.index') }}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    <div class="sw-card mt-2">
+      <div class="sw-card-head"><h1 class="h4 mb-0">{{ title }}</h1></div>
+      <form method="post" class="sw-card-body" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+        {% with cats=categories, accts=accounts, methods=qa_payment_methods, pfx='pg-' %}
+          {% include "partials/tx_fields.html" %}
+        {% endwith %}
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          {% if tx %}
+          <button class="btn btn-ghost text-danger" type="submit" form="delete-form"><i class="bi bi-trash me-1"></i>Delete</button>
+          {% else %}<span></span>{% endif %}
+          <button class="btn btn-gradient px-4"><i class="bi bi-check2 me-1"></i>Save transaction</button>
+        </div>
+      </form>
+      {% if tx %}
+      <form id="delete-form" method="post" action="{{ url_for('transactions.delete', tx_id=tx.id) }}" onsubmit="return confirm('Delete this transaction?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

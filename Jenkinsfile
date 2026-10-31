@@ -1,4 +1,4 @@
-﻿// Jenkins Pipeline for Spendwise.
+// Jenkins Pipeline for Spendwise.
 //
 // What it does, on every push to GitHub:
 //   1. Run the test suite and lint

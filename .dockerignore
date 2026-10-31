@@ -1,0 +1,33 @@
+﻿# Keeps the build context small and prevents local junk / secrets from ever
+# reaching the image.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+.git/
+.gitignore
+.gitattributes
+
+.env
+*.sqlite3
+
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Later-phase infra folders - not needed inside the app image.
+terraform/
+ansible/
+k8s/
+jenkins/
+monitoring/
+docs/
+
+Dockerfile
+docker-compose*.yml
+README.md

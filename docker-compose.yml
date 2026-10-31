@@ -1,0 +1,53 @@
+# Local development/testing stack: the app + a real MySQL database, both in containers.
+# This lets you test against MySQL (what AWS RDS will run) instead of the SQLite file
+# you use for `flask run`.
+#
+# The credentials below are throwaway, local-only values - they never leave your laptop
+# and are not used anywhere in the AWS phases later (those will use real secrets managed
+# through Kubernetes Secrets / AWS, not this file).
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: devrootpass
+      MYSQL_DATABASE: expense_tracker
+      MYSQL_USER: expense
+      MYSQL_PASSWORD: devpass123
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"   # host:container - 3307 avoids clashing with a MySQL you might already have on 3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pdevrootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: dev-docker-secret-change-in-production
+      FLASK_CONFIG: production
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: expense_tracker
+      DB_USER: expense
+      DB_PASSWORD: devpass123
+      DEFAULT_CURRENCY: INR
+      RATELIMIT_STORAGE_URI: memory://
+      SHOW_DEMO_LOGIN: "1"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Apply any pending DB migrations, then start the app - the MySQL container starts
+    # empty, so this is what actually creates the tables before gunicorn boots.
+    command: >
+      sh -c "flask db upgrade && gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 60 wsgi:app"
+
+volumes:
+  db_data:

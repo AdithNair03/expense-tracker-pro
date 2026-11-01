@@ -22,7 +22,7 @@ RUN apt-get update \
 # Install dependencies first, separately from app code, so Docker can cache this layer
 # and skip reinstalling everything just because a template or route changed.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout=180 --retries=10 -r requirements.txt
 
 COPY . .
 
